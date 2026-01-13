@@ -6,16 +6,20 @@ import uuid from 'react-native-uuid';
 
 interface DoseState {
   logs: DoseLog[];
+  favorites: string[]; // list of substance names
   addLog: (log: Omit<DoseLog, 'id'>) => void;
   removeLog: (id: string) => void;
   updateLog: (id: string, updates: Partial<DoseLog>) => void;
   clearLogs: () => void;
+  toggleFavorite: (name: string) => void;
+  isFavorite: (name: string) => boolean;
 }
 
 export const useDoseStore = create<DoseState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       logs: [],
+      favorites: [],
       addLog: (log) => set((state) => ({
         logs: [{ ...log, id: uuid.v4() as string }, ...state.logs]
       })),
@@ -26,6 +30,15 @@ export const useDoseStore = create<DoseState>()(
         logs: state.logs.map((l) => (l.id === id ? { ...l, ...updates } : l))
       })),
       clearLogs: () => set({ logs: [] }),
+      toggleFavorite: (name) => set((state) => {
+        const exists = state.favorites.includes(name);
+        return {
+          favorites: exists 
+            ? state.favorites.filter(n => n !== name)
+            : [...state.favorites, name]
+        };
+      }),
+      isFavorite: (name) => get().favorites.includes(name),
     }),
     {
       name: 'dose-storage',
